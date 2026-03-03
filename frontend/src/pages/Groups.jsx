@@ -7,9 +7,13 @@ import { formatDate } from '../lib/format';
 export default function Groups() {
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    api.listGroups().then(setGroups).catch(console.error).finally(() => setLoading(false));
+    api.listGroups()
+      .then(setGroups)
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
   }, []);
 
   return (
@@ -27,12 +31,23 @@ export default function Groups() {
 
       {loading ? (
         <div className="space-y-3">
+          <div className="text-center text-sm text-slate-400 py-2">Cargando grupos...</div>
           {[1, 2].map((i) => (
             <div key={i} className="bg-white rounded-xl p-4 animate-pulse">
               <div className="h-4 bg-slate-200 rounded w-1/3 mb-2" />
               <div className="h-3 bg-slate-100 rounded w-1/2" />
             </div>
           ))}
+        </div>
+      ) : error ? (
+        <div className="bg-white rounded-2xl p-8 text-center">
+          <p className="text-slate-500 mb-3">{error}</p>
+          <button
+            onClick={() => { setLoading(true); setError(null); api.listGroups().then(setGroups).catch((e) => setError(e.message)).finally(() => setLoading(false)); }}
+            className="text-primary-600 font-medium hover:text-primary-700"
+          >
+            Reintentar
+          </button>
         </div>
       ) : groups.length === 0 ? (
         <div className="bg-white rounded-2xl p-8 text-center">

@@ -1,11 +1,20 @@
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
-async function request(path, options = {}) {
+async function request(path, options = {}, retries = 2) {
   const token = localStorage.getItem('token');
   const headers = { 'Content-Type': 'application/json', ...options.headers };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+  let res;
+  try {
+    res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+  } catch (err) {
+    if (retries > 0) {
+      await new Promise((r) => setTimeout(r, 1500));
+      return request(path, options, retries - 1);
+    }
+    throw new Error('No se pudo conectar al servidor. Intentá de nuevo.');
+  }
 
   if (res.status === 401) {
     localStorage.removeItem('token');

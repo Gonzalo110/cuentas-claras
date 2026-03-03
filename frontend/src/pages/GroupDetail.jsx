@@ -146,11 +146,11 @@ export default function GroupDetail() {
       {settleConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 max-w-sm w-full space-y-4">
-            <h3 className="text-lg font-bold text-slate-800">Confirmar pago</h3>
+            <h3 className="text-lg font-bold text-slate-800">Confirmar pago recibido</h3>
             <p className="text-slate-600">
-              ¿Marcar como saldada la deuda de{' '}
+              ¿Confirmás que recibiste{' '}
               <span className="font-semibold">{formatMoney(settleConfirm.amount)}</span>{' '}
-              a <span className="font-semibold">{settleConfirm.to_user_name}</span>?
+              de <span className="font-semibold">{settleConfirm.from_user_name}</span>?
             </p>
             <div className="flex gap-3">
               <button
@@ -330,23 +330,23 @@ export default function GroupDetail() {
                     </span>
                     <span className="ml-auto font-bold text-danger">{formatMoney(debt.amount)}</span>
                   </div>
+                  {debt.to_user_id === user.id && (
+                    <button
+                      onClick={() => setSettleConfirm(debt)}
+                      className="w-full flex items-center justify-center gap-1.5 bg-success text-white py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+                    >
+                      <Check size={14} />
+                      Confirmar pago recibido
+                    </button>
+                  )}
                   {debt.from_user_id === user.id && (
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setSettleConfirm(debt)}
-                        className="flex-1 flex items-center justify-center gap-1.5 bg-success text-white py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
-                      >
-                        <Check size={14} />
-                        Marcar saldada
-                      </button>
-                      <button
-                        onClick={() => handleMercadoPago(debt)}
-                        className="flex-1 flex items-center justify-center gap-1.5 bg-sky-500 text-white py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
-                      >
-                        <CreditCard size={14} />
-                        Mercado Pago
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => handleMercadoPago(debt)}
+                      className="w-full flex items-center justify-center gap-1.5 bg-sky-500 text-white py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+                    >
+                      <CreditCard size={14} />
+                      Pagar con Mercado Pago
+                    </button>
                   )}
                 </div>
               ))}
