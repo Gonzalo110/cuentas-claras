@@ -8,9 +8,18 @@ settings = get_settings()
 
 app = FastAPI(title="Cuentas Claras API", version="1.0.0")
 
+origins = [
+    "http://localhost:5173",
+    "http://localhost:3000",
+]
+if settings.FRONTEND_URL:
+    origins.append(settings.FRONTEND_URL)
+    # Also allow without trailing slash
+    origins.append(settings.FRONTEND_URL.rstrip("/"))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.FRONTEND_URL, "http://localhost:5173", "http://localhost:3000"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
