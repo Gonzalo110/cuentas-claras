@@ -33,6 +33,8 @@ export const api = {
   createGroup: (data) => request('/api/groups/', { method: 'POST', body: JSON.stringify(data) }),
   listGroups: () => request('/api/groups/'),
   getGroup: (id) => request(`/api/groups/${id}`),
+  updateGroup: (id, data) => request(`/api/groups/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteGroup: (id) => request(`/api/groups/${id}`, { method: 'DELETE' }),
   getGroupPublicInfo: (code) => request(`/api/groups/invite/${code}/info`),
   joinGroup: (code) => request(`/api/groups/invite/${code}/join`, { method: 'POST' }),
 

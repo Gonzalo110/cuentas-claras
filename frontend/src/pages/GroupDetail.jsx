@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { formatMoney, formatDateTime } from '../lib/format';
 import {
   ArrowLeft, Plus, Users, Receipt, BarChart3, Share2, Copy,
-  Check, Trash2, CreditCard, ArrowRight
+  Check, Trash2, CreditCard, ArrowRight, Pencil, X
 } from 'lucide-react';
 
 export default function GroupDetail() {
@@ -19,6 +19,17 @@ export default function GroupDetail() {
   const [tab, setTab] = useState('balances');
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Edit state
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editDesc, setEditDesc] = useState('');
+
+  // Confirm settle dialog
+  const [settleConfirm, setSettleConfirm] = useState(null);
+
+  // Delete confirm
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -64,6 +75,7 @@ export default function GroupDetail() {
         amount: debt.amount,
       });
       await api.settlePayment(payment.id);
+      setSettleConfirm(null);
       loadData();
     } catch (err) {
       alert(err.message);
@@ -84,6 +96,31 @@ export default function GroupDetail() {
     }
   };
 
+  const startEditing = () => {
+    setEditName(group.name);
+    setEditDesc(group.description || '');
+    setEditing(true);
+  };
+
+  const handleSaveEdit = async () => {
+    try {
+      const updated = await api.updateGroup(id, { name: editName, description: editDesc });
+      setGroup(updated);
+      setEditing(false);
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleDeleteGroup = async () => {
+    try {
+      await api.deleteGroup(id);
+      navigate('/groups');
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-4 animate-pulse">
@@ -95,6 +132,8 @@ export default function GroupDetail() {
 
   if (!group) return <p className="text-center text-slate-500 mt-10">Grupo no encontrado</p>;
 
+  const isCreator = group.created_by === user.id;
+
   const tabs = [
     { key: 'balances', label: 'Balances', icon: BarChart3 },
     { key: 'expenses', label: 'Gastos', icon: Receipt },
@@ -103,24 +142,132 @@ export default function GroupDetail() {
 
   return (
     <div className="space-y-4 animate-fade-in">
+      {/* Settle confirmation modal */}
+      {settleConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full space-y-4">
+            <h3 className="text-lg font-bold text-slate-800">Confirmar pago</h3>
+            <p className="text-slate-600">
+              ¿Marcar como saldada la deuda de{' '}
+              <span className="font-semibold">{formatMoney(settleConfirm.amount)}</span>{' '}
+              a <span className="font-semibold">{settleConfirm.to_user_name}</span>?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setSettleConfirm(null)}
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-medium hover:bg-slate-50 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => handleSettle(settleConfirm)}
+                className="flex-1 py-2.5 rounded-xl bg-success text-white font-medium hover:opacity-90 transition-opacity"
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete confirmation modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full space-y-4">
+            <h3 className="text-lg font-bold text-danger">Eliminar grupo</h3>
+            <p className="text-slate-600">
+              ¿Estás seguro de que querés eliminar <span className="font-semibold">"{group.name}"</span>?
+              Se eliminarán todos los gastos y pagos. Esta acción no se puede deshacer.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteConfirm(false)}
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-medium hover:bg-slate-50 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDeleteGroup}
+                className="flex-1 py-2.5 rounded-xl bg-danger text-white font-medium hover:opacity-90 transition-opacity"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <button onClick={() => navigate('/groups')} className="flex items-center gap-1 text-slate-500 hover:text-slate-700">
           <ArrowLeft size={18} />
           <span className="text-sm">Grupos</span>
         </button>
-        <button
-          onClick={copyInviteLink}
-          className="flex items-center gap-1.5 text-sm text-primary-600 hover:text-primary-700 font-medium"
-        >
-          {copied ? <Check size={16} /> : <Share2 size={16} />}
-          {copied ? 'Copiado!' : 'Invitar'}
-        </button>
+        <div className="flex items-center gap-2">
+          {isCreator && (
+            <>
+              <button
+                onClick={startEditing}
+                className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 font-medium"
+              >
+                <Pencil size={15} />
+              </button>
+              <button
+                onClick={() => setDeleteConfirm(true)}
+                className="flex items-center gap-1 text-sm text-slate-500 hover:text-danger font-medium"
+              >
+                <Trash2 size={15} />
+              </button>
+            </>
+          )}
+          <button
+            onClick={copyInviteLink}
+            className="flex items-center gap-1.5 text-sm text-primary-600 hover:text-primary-700 font-medium"
+          >
+            {copied ? <Check size={16} /> : <Share2 size={16} />}
+            {copied ? 'Copiado!' : 'Invitar'}
+          </button>
+        </div>
       </div>
 
-      <div>
-        <h2 className="text-2xl font-bold text-slate-800">{group.name}</h2>
-        {group.description && <p className="text-slate-500 text-sm">{group.description}</p>}
-      </div>
+      {editing ? (
+        <div className="bg-white rounded-xl p-4 space-y-3">
+          <input
+            type="text"
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            className="w-full border rounded-lg px-3 py-2 text-lg font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            placeholder="Nombre del grupo"
+          />
+          <input
+            type="text"
+            value={editDesc}
+            onChange={(e) => setEditDesc(e.target.value)}
+            className="w-full border rounded-lg px-3 py-2 text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            placeholder="Descripción (opcional)"
+          />
+          <div className="flex gap-2">
+            <button
+              onClick={() => setEditing(false)}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50"
+            >
+              <X size={14} />
+              Cancelar
+            </button>
+            <button
+              onClick={handleSaveEdit}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-primary-600 text-white text-sm font-medium hover:bg-primary-700"
+            >
+              <Check size={14} />
+              Guardar
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div>
+          <h2 className="text-2xl font-bold text-slate-800">{group.name}</h2>
+          {group.description && <p className="text-slate-500 text-sm">{group.description}</p>}
+        </div>
+      )}
 
       <Link
         to={`/groups/${id}/new-expense`}
@@ -186,7 +333,7 @@ export default function GroupDetail() {
                   {debt.from_user_id === user.id && (
                     <div className="flex gap-2">
                       <button
-                        onClick={() => handleSettle(debt)}
+                        onClick={() => setSettleConfirm(debt)}
                         className="flex-1 flex items-center justify-center gap-1.5 bg-success text-white py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
                       >
                         <Check size={14} />

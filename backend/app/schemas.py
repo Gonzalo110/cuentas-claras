@@ -38,6 +38,11 @@ class GroupCreate(BaseModel):
     description: str = ""
 
 
+class GroupUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+
+
 class GroupMemberResponse(BaseModel):
     id: str
     user_id: str

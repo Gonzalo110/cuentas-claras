@@ -104,6 +104,6 @@ class Payment(Base):
     settled_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    group = relationship("Group")
+    group = relationship("Group", backref="payments")
     from_user = relationship("User", foreign_keys=[from_user_id])
     to_user = relationship("User", foreign_keys=[to_user_id])
